@@ -1,25 +1,53 @@
+import { NotificationService } from './application/notification/notification.service';
 import { PrismaService } from './prisma.service';
-import { Controller, Get, Post } from '@nestjs/common';
-import { randomUUID } from 'node:crypto'
+import { Controller, Delete, Get, Param, Patch, Post, Request } from '@nestjs/common';
 
-@Controller()
-export class AppController {
-  constructor(private readonly prisma: PrismaService) {}
+@Controller('api')
+export class NotificationsController {
+  // constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly notificationService: NotificationService,
+    private readonly prisma: PrismaService) { }
 
-  @Get()
+  @Get('/notifications')
   index() {
-    return this.prisma.notification.findMany()
+    return this.notificationService.all()
   }
 
   @Post('/notifications')
-  async create() {
-    await this.prisma.notification.create({
-      data:{
-        id: randomUUID(),
-        recipientId:randomUUID(),
-        content:'dedfef',
-        category:'deee',
-      }
+  async create(@Request() req: Request) {
+    const { body } = req
+    await this.notificationService.create({
+      category: body['category'],
+      recipientId: body['recipientId'],
+      content: body['content'],
     });
+  }
+
+
+  @Get('/notifications/:id')
+  async show(@Param('id') id: string) {
+    return this.notificationService.show(id);
+  }
+
+
+  @Patch('/notifications/:id')
+  async edit(@Param('id') id: string, @Request() request: Request) {
+    await this.prisma.notification.update(
+      {
+        data: {
+          content: 'testando edit',
+          category: 'testando edit',
+        },
+        where: { id: id }
+      }
+    )
+  }
+
+  @Delete('/notifications/:id')
+  async destroy(@Param('id') id: string) {
+    await this.prisma.notification.delete({
+      where: { id: id }
+    })
   }
 }
